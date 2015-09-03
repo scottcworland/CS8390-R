@@ -1,0 +1,269 @@
+---
+title: "CS8390 ML notes"
+author: "Scott Worland"
+date: "Monday, August 24, 2015"
+output:
+  html_document:
+    theme: cerulean
+    toc: yes
+---
+
+## Preface
+
+This document contains notes on the Coursera Machine Learning course taught by Andrew Ng, and the independent study taught by Doug Fisher at VU in the fall of 2015. The coursera course requires code to be submitted in MATLAB, and that code can be found in a GitHub repository [here](https://github.com/scottcworland/CS8390-MATLAB). 
+
+Coursera websites:
+
++ [Machine Learning Main](https://www.coursera.org/learn/machine-learning/home/welcome)
++ [Historical Notes](https://class.coursera.org/ml-003/lecture)
+
+
+## Introduction
+#### Supervised Learning
+There are labels, and correct answers. Regression and classification are the two most commonly used methods. Use training and test sets.
+
+#### Unsupervised Learning
+No labels (or the same label). Unsupervised methods look for structures in the data.
+
+## Linear Regression with one variable
+#### variable definitions
++ m = number of training examples
++ x = input variable/feature
++ y = out variable/target
++ (x,y) = one training example
++ h = "hypothesis", function that maps x's to y's
+
+#### model form
+Univariate  linear regression:
+
+$$
+h_\theta (x) = \theta_0 + \theta_1 x
+$$
+
+<br>
+
+<center><img src="graphics\\week1-1.png" height="200px"/></center>
+
+<br>
+
+### Optimization objective
+The hypothesis function depends on the values of $\theta_0$ and $\theta_1$.
+
+<br>
+
+<center><img src="graphics\\week1-2.png" height="200px"/></center>
+
+<br>
+
+#### Cost function $\theta_1$ and $\theta_2$ 
+
+The cost function for linear models is also called the "Squared error function". The _cost_ of the _cost function_ can be thought of as the difference between the value of $J$ for particular parameters $\theta_1$ and $\theta_2$ and the minimum of $J$.
+
+__Hypothesis__:
+$$
+h_\theta (x) = \theta_0 + \theta_1 x
+$$
+
+__Parameters__:
+$$
+\theta_0,\theta_1
+$$
+
+__Cost Function__:
+$$
+J(\theta_0,\theta_1) = \frac{1}{2m} \sum^m_{i=1}(h_\theta (x_i) - (y_i))^2
+$$
+
+__Goal__:
+$$
+argmin~~~J(\theta_0,\theta_1)
+$$
+
+#### Cost function for only $\theta_1$ 
+Use a simplified cost function to aid our intuition. Let's assume a zero intercept, and only minimize the function for the slope:
+
+__Hypothesis__:
+$$
+h_\theta (x) = \theta_1 x
+$$
+
+__Parameters__:
+$$
+\theta_1
+$$
+
+__Cost Function__:
+$$
+J(\theta_1) = \frac{1}{2m} \sum^m_{i=1}(h_\theta (x_i) - (y_i))^2
+$$
+
+__Goal__:
+$$
+argmin~~~J(\theta_1)
+$$
+
+The below code creates a cost function for the above example. Because y = x in the code below, we know that $\theta_1$ should be equal to one. In order to prove to ourselves that this is correct, we can plot different values of $\theta_1$ vs $J(\theta_1)$.
+
+```{r,fig.align='center'}
+# Create x and y variables
+x = 1:10
+y = x
+
+# create values of theta
+theta = seq(from = -1, by = 0.5, length.out=length(x))
+
+# plot all possibilities of h
+plot(x,y)
+for (i in 1:length(x)){
+h = theta[i] * x
+lines(x,h,col=sample(rainbow(length(x))))
+}
+
+# initialize the  cost function
+J = numeric()
+
+# Calculate the value of J for each value of theta
+for (i in 1:length(x)){
+h = theta[i] * x
+J[i] = (1/(2*length(x))) * sum((h - y)^2)
+}
+
+# find theta1
+theta1 = theta[which(J == min(J))]
+
+# plot
+plot(theta,J)
+lines(theta,J)
+abline(v = theta1,lty = 3)
+```
+
+As we expected, the value of $\theta_1$ that corresponds to the minimum of $j(\theta_1)$ is 1 (which corresponds to the green line). Although this seems simple, it's a pretty profound way of finding the least squares regression line. 
+
+### Gradient descent
+
+General algorithm for finding the minimum of a cost function:
+
+$$
+argmin~~~J(\theta_0,...,\theta_n)
+$$
+
+for our example, we will focus on only two parameters.
+
+#### algorithm
+1. Start with some $\theta_0$, $\theta_1$. For simplicity, start with $\theta_0$ = 0, $\theta_1$ = 0
+
+2. Keep changing $\theta_0$, $\theta_1$ to reduce $j(\theta_0,\theta_1)$ until we arrive at a minimum  
+
+<br>
+
+<center><img src="graphics\\week1-3.png" height="200px"/></center>  
+
+<br>
+ 
+The idea is to go "down hill" with each step. Repeat the following until convergence:
+
+$$
+\theta_j = \theta_j - \alpha \frac{\partial}{\partial \theta_j}J(\theta_0,\theta_1) ~~~ ~~~ (for ~~~ j=0, ~~~ and ~~~ j=1)
+$$
+
+Where $\alpha$ is the _learning rate_, or how fast you move down gradient (more on that later). The goal is to update both $\theta_0$ and $\theta_1$ at the same time. This simply means that we must solve the above equation for both parameters _before_ updating. Again, its helpful to look at the function for just one variable:
+
+$$
+\theta_1 = \theta_1 - \alpha \frac{d}{d \theta_1}J(\theta_1) 
+$$
+
+Let's break the equation apart to analyze what each step is doing. First the derivative portion:
+
+$$
+\frac{d}{d \theta_1}
+$$
+
+which means we are taking the derivative of the cost function:
+
+$$
+\frac{d}{d \theta_1} \frac{1}{2m} \sum^m_{i=1}(\theta_1 (x_i) - (y_i))^2
+$$
+
+and without going into much detail, this derivative is:
+
+$$
+\frac{1}{m} \sum^m_{i=1}(\theta_1 (x_i) - (y_i))*x_i
+$$
+
+Using the code above, let's use $\theta_1$ = 2, and find the derivative of that point.
+
+```{r, echo=T, fig.align='center'}
+theta.temp = 2
+Jtemp = (1/(2*length(x))) * sum((theta.temp*x - y)^2)
+
+## find the derivative
+beta1 = (1/length(x)) * sum(((theta.temp*x)-y)*x) #slope = derivative
+beta0 = Jtemp - (beta1*theta.temp) #find intercept
+
+# plot
+plot(theta,J)
+lines(theta,J)
+abline(v = theta1,lty = 3)
+points(theta.temp,Jtemp, pch = 22, bg = "red")
+abline(beta0,beta1, col = "blue")
+```
+
+The value of the slope is positive, meaning that when we update,
+
+$$
+\theta_1 - \alpha * (positive ~~~ number)
+$$
+
+$\theta_1$ will be smaller than 3 ($\alpha$ is always positive). For our example, the slope is ~ 40, which is much larger than 3, and with and an $\alpha$ = 1, this would result in a updated $\theta_1$ which way overshoots the minimum. If alpha is too big, the algorithm can fail to converge or even begin to diverge. Let's say we set $\alpha$ to 0.01, and see what happens:
+
+```{r, echo=T, fig.align='center'}
+alpha = 0.01
+theta.temp = theta.temp - (alpha*beta1) #update
+Jtemp = (1/(2*length(x))) * sum((theta.temp*x - y)^2)
+
+## find the derivative
+beta1 = (1/length(x)) * sum(((theta.temp*x)-y)*x) #slope = derivative
+beta0 = Jtemp - (beta1*theta.temp) #find intercept
+
+# plot
+plot(theta,J)
+lines(theta,J)
+abline(v = theta1,lty = 3)
+points(theta.temp,Jtemp, pch = 22, bg = "red")
+abline(beta0,beta1, col = "blue")
+```
+
+This moves $\theta_1$ much closer to 1, which we already know is our local minimum. If we keep iterating through the algorithm we will eventually arrive at the local minimum.
+
+```{r, echo=F, fig.align='center'}
+# plot
+plot(theta,J)
+lines(theta,J)
+abline(v = theta1,lty = 3)
+points(1,0, pch = 22, bg = "red")
+abline(0,0, col = "blue")
+```
+
+#### Gradient decent for linear regression
+
+Just to formalize what is above, for linear regression: repeat until convergence:
+
+$$
+\theta_0 = \theta_0 - \alpha\frac{1}{m} \sum^m_{i=1}(\theta_1 (x_i) - (y_i)) = \theta_0 - \alpha \frac{\partial}{\partial \theta_0}J(\theta_0,\theta_1)
+$$
+
+$$
+\theta_1 = \theta_1 - \alpha\frac{1}{m} \sum^m_{i=1}(\theta_1 (x_i) - (y_i))*x_i = \theta_1 - \alpha\frac{\partial}{\partial \theta_1}J(\theta_0,\theta_1)
+$$
+
+For linear regression, the cost function will always be convex (bowl shaped) and there is only one global optimum.
+
+<br>
+
+<center><img src="graphics\\week1-4.png" height="200px"/></center>
+
+<br>
+
+The type of gradient decent we are using is called "Batch" gradient decent because each step of the algorithm uses all the training examples. An alternative to gradient decent is the normal equation method. The normal equation method simply involves taking the derivative of J explicitly with respect to the $\theta_j$'s and setting them to zero.
+
+
