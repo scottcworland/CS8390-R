@@ -25,7 +25,7 @@ There are labels, and correct answers. Regression and classification are the two
 #### Unsupervised Learning
 No labels (or the same label). Unsupervised methods look for structures in the data.
 
-## Linear Regression with one variable
+## 1. Linear Regression with one variable
 #### variable definitions
 + m = number of training examples
 + x = input variable/feature
@@ -71,7 +71,7 @@ $$
 
 __Cost Function__:
 $$
-J(\theta_0,\theta_1) = \frac{1}{2m} \sum^m_{i=1}(h_\theta (x_i) - (y_i))^2
+J(\theta_0,\theta_1) = \frac{1}{2m} \sum^m_{i=1}(h_\theta (x^{(i)}) - y^{(i)})^2
 $$
 
 __Goal__:
@@ -94,7 +94,7 @@ $$
 
 __Cost Function__:
 $$
-J(\theta_1) = \frac{1}{2m} \sum^m_{i=1}(h_\theta (x_i) - (y_i))^2
+J(\theta_1) = \frac{1}{2m} \sum^m_{i=1}(\theta_1x^{(i)} - y^{(i)})^2
 $$
 
 __Goal__:
@@ -181,13 +181,13 @@ $$
 which means we are taking the derivative of the cost function:
 
 $$
-\frac{d}{d \theta_1} \frac{1}{2m} \sum^m_{i=1}(\theta_1 (x_i) - (y_i))^2
+\frac{d}{d \theta_1} \frac{1}{2m} \sum^m_{i=1}(\theta_1x^{(i)} - y^{(i)})^2
 $$
 
 and without going into much detail, this derivative is:
 
 $$
-\frac{1}{m} \sum^m_{i=1}(\theta_1 (x_i) - (y_i))*x_i
+\frac{1}{m} \sum^m_{i=1}(\theta_1x^{(i)} - y^{(i)})*x^{(i)}
 $$
 
 Using the code above, let's use $\theta_1$ = 2, and find the derivative of that point.
@@ -244,16 +244,16 @@ points(1,0, pch = 22, bg = "red")
 abline(0,0, col = "blue")
 ```
 
-#### Gradient decent for linear regression
+#### Gradient descent for linear regression
 
 Just to formalize what is above, for linear regression: repeat until convergence:
 
 $$
-\theta_0 = \theta_0 - \alpha\frac{1}{m} \sum^m_{i=1}(\theta_1 (x_i) - (y_i)) = \theta_0 - \alpha \frac{\partial}{\partial \theta_0}J(\theta_0,\theta_1)
+\theta_0 = \theta_0 - \alpha\frac{1}{m} \sum^m_{i=1}(\theta_1x^{(i)} - y^{(i)}) = \theta_0 - \alpha \frac{\partial}{\partial \theta_0}J(\theta_0,\theta_1)
 $$
 
 $$
-\theta_1 = \theta_1 - \alpha\frac{1}{m} \sum^m_{i=1}(\theta_1 (x_i) - (y_i))*x_i = \theta_1 - \alpha\frac{\partial}{\partial \theta_1}J(\theta_0,\theta_1)
+\theta_1 = \theta_1 - \alpha\frac{1}{m} \sum^m_{i=1}(\theta_1x^{(i)} - y^{(i)})*x^{(i)} = \theta_1 - \alpha\frac{\partial}{\partial \theta_1}J(\theta_0,\theta_1)
 $$
 
 For linear regression, the cost function will always be convex (bowl shaped) and there is only one global optimum.
@@ -264,6 +264,231 @@ For linear regression, the cost function will always be convex (bowl shaped) and
 
 <br>
 
-The type of gradient decent we are using is called "Batch" gradient decent because each step of the algorithm uses all the training examples. An alternative to gradient decent is the normal equation method. The normal equation method simply involves taking the derivative of J explicitly with respect to the $\theta_j$'s and setting them to zero.
+The type of gradient descent we are using is called "Batch" gradient descent because each step of the algorithm uses all the training examples. An alternative to gradient descent is the normal equation method. The normal equation method simply involves taking the derivative of J explicitly with respect to the $\theta_j$'s and setting them to zero.
+
+
+## 2. Linear Regression with multiple variables
+
+#### variable definitions
++ m = number of training examples
++ n = number of features
++ x$_n^m$ = feature $m$ for observation $n$ ($x_1^1,...,x_n^m$)
++ y = output variable/target
++ h = "hypothesis", function that maps x's to y's
+
+The notation that Andrew Ng uses is column as subscript (index for predictor) and superscript for row (index for observation). So, x$_1^1$ is the first row of the first predictor, and x$_5^{11}$ is the 11th row for the 5th predictor.
+
+#### model form
+
+$$
+h_\theta (x) = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + ... + \theta_n x_n
+$$
+
+For simpler notion, we can add a $x_0$ term (where $x_0$ = 1),
+
+$$
+h_\theta (x) = \theta_0 x_0 + \theta_1 x_1 + \theta_2 x_2 + ... + \theta_n x_n
+$$
+
+and by creating feature and parameter vectors,
+
+$$x = \left[\begin{array}
+{ccc}
+x_0  \\
+x_1  \\
+x_2  \\
+.    \\
+.    \\
+.    \\
+x_n 
+\end{array}\right] \in \mathbf{R}^{n+1}, ~~~ \theta = \left[\begin{array}
+{ccc}
+\theta_0  \\
+\theta_1  \\
+\theta_2  \\
+.    \\
+.    \\
+.    \\
+\theta_n 
+\end{array}\right] \in \mathbf{R}^{n+1}, ~~~ \theta^T = \left[\theta_0, \theta_1, \theta_2...\theta_n\right]
+$$
+
+and using the transpose of $\theta$ and the rules of martix multipication,
+
+$$\theta^Tx = \left[\theta_0, \theta_1, \theta_2...\theta_n\right] \left[\begin{array}
+{ccc}
+x_0  \\
+x_1  \\
+x_2  \\
+.    \\
+.    \\
+.    \\
+x_n 
+\end{array}\right] 
+$$
+
+we can rewrite the formulation in condensed notation:
+
+$$
+h_\theta (x) = \theta^Tx
+$$
+
+Another way to right the feature vector is as a design matrix. The format is columns = features and rows = observations. The trick is to remember to include a vector of ones as the first column.
+
+$$\mathbf{X} = \left[\begin{array}
+{cccc}
+1 & x_1^1 &   .  & x_n^1 \\
+1 & x_1^2 &   .  & x_n^2 \\
+1 & x_1^3 &   .  & x_n^3 \\
+. & .     &   .  &  .    \\
+1 & x_1^m &   .  & x_n^m   
+\end{array}\right] \in \mathbf{R}^{m * n+1}
+$$
+
+#### Details of multivariate regression 
+
+These are similar to univariate regression
+
+__Hypothesis__:
+$$
+h_\theta (x) = \theta^Tx
+$$
+
+__Parameters__:
+$$
+\theta
+$$
+
+__Cost Function__:
+$$
+J(\theta) = \frac{1}{2m} \sum^m_{i=1}(h_\theta (x^{(i)}) - y^{(i)})^2
+$$
+
+__Goal__:
+$$
+argmin~~~J(\theta)
+$$
+
+### Gradient descent
+$$
+\theta_j = \theta_j - \alpha \frac{\partial}{\partial \theta_j}J(\theta_0,...,\theta_n) ~~~ ~~~ (for ~~~ j=0,...,n)
+$$
+
+The general form of the partial derivative above is:
+$$
+\frac{\partial}{\partial \theta_j}J(\theta_0,...,\theta_n) 
+$$
+
+$$
+\frac{1}{m} \sum^m_{i=1}(\theta_jx^{(i)} - y^{(i)})*x_j^{(i)} ~~~ ~~~ (for ~~~ j=0,...,n)
+$$
+
+### Scaling features
+If the features on on very differnt scales, it would be a good idea to scale them. This will make gradient descent much faster as the countours will be more balanced (as opposed to elongated contours if very different scales). The idea is to get every feature somewhere close to -1 and 1:
+
+$$
+-1 \leq x_i \leq 1
+$$
+
+This is not a hard-and-fast rule. A good rule of thumb is somewhere within the range of:
+
+$$
+-3 \leq x_i \leq 3, ~~~ ~~~ -\frac{1}{3} \leq x_i \leq \frac{1}{3} 
+$$
+
+This can be quickly done by dividing each feature by the maximum value of that feature. It might also be a good idea to normalize every feature (except x$_0$ = 1) to its mean... where every feature will have a zero mean:
+
+$$
+replace ~~~ x_i ~~~ with ~~~ x_i - \mu_i
+$$
+
+So combine everything together and you basically have some form of the z-score:
+
+$$
+replace ~~~ x_i ~~~ with ~~~ \frac{x_i - \mu_i}{s_i}
+$$
+
+Where $s_i$ could be the range, standard deviation ... etc.
+
+### Polynomial regression
+
+We can easily re-purpose the machinery of linear regression for polynomial regression. The hypothesis changes to:
+
+$$
+h_\theta(x) = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + \theta_3 x_3
+$$
+
+Where $x_1 = x_1$, $x_2 = (x_1)^2$, $x_3 = (x_1)^3$,
+
+$$
+h_\theta(x) = \theta_0 + \theta_1 x + \theta_2 x^2 + \theta_3 x^3
+$$
+
+This becomes obvious when generating data in the above form:
+
+```{r, echo=T, fig.align='center'}
+set.seed(10)
+n = 50
+x = 1:n
+y = x + x^2 + rnorm(n, 0, 150)
+
+plot(x,y)
+lines(x, x + x^2, col = "blue")
+```
+ 
+### Computing parameters analytically
+
+We can also solve for $\theta$ analytically using the [normal equations](http://eli.thegreenplace.net/2015/the-normal-equation-and-matrix-calculus/) (as opposed to gradient descent). This is done by taking the derivative of the cost function with respect to theta, and setting that equal to zero. This is exactly what gradient descent is "looking for" with each iteration. Start with the cost functionin the traditional form:
+
+$$
+J(\theta) = \frac{1}{2m} \sum^m_{i=1}(h_\theta (x^{(i)}) - y^{(i)})^2
+$$
+
+and rewrite this in matrix form using the design matrix $\mathbf{X}$
+
+$$
+J(\theta) = \frac{1}{2m} (\mathbf{X}\theta - y)^T(\mathbf{X}\theta - y)
+$$
+
+Where $(\mathbf{X}\theta - y)$ is the residuals. We can drop the $1/2m$ because we are setting it equal to zero, and we can then do some algebra,
+
+$$
+J(\theta) = ((\mathbf{X}\theta)^T - y^T)(\mathbf{X}\theta - y)
+$$
+
+Then factor,
+
+$$
+J(\theta) = (\mathbf{X}\theta)^T\mathbf{X}\theta - (\mathbf{X}\theta)^T y - y^T\mathbf{X}\theta + y^Ty
+$$
+
+Because $\mathbf{X}\theta$, and $y$ are vectors, the order of multipication is not important and we can rearrange:
+
+$$
+J(\theta) = \theta^T \mathbf{X}^T \mathbf{X} \theta - 2(\mathbf{X} \theta)^T y + y^Ty
+$$
+
+Take the derivative (do not go into the derivative here) and set equal to zero,
+
+$$
+\frac{\partial}{\partial \theta_j} J(\theta) = 2\mathbf{X}^T \mathbf{X} \theta - 2 \mathbf{X}^T y = 0
+$$
+
+Then solve for $\theta$
+
+$$
+\mathbf{X}^T \mathbf{X} \theta = \mathbf{X}^T y
+$$
+
+$$
+\theta = (\mathbf{X}^T\mathbf{X})^{-1} X^T y
+$$
+
+Using the analytic approach is a good alternative with small (n < 1000) number of features, but the inverse portion of the algorithm is slow and gradient descent is faster. Also, as we will see, the analytic approach is not possible for things like logistic regression.
+
+
+
+
+
 
 
