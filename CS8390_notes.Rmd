@@ -301,7 +301,7 @@ x_2  \\
 .    \\
 .    \\
 x_n 
-\end{array}\right] \in \mathbf{R}^{n+1}, ~~~ \theta = \left[\begin{array}
+\end{array}\right] \in \mathbb{R}^{n+1}, ~~~ \theta = \left[\begin{array}
 {ccc}
 \theta_0  \\
 \theta_1  \\
@@ -310,7 +310,7 @@ x_n
 .    \\
 .    \\
 \theta_n 
-\end{array}\right] \in \mathbf{R}^{n+1}, ~~~ \theta^T = \left[\theta_0, \theta_1, \theta_2...\theta_n\right]
+\end{array}\right] \in \mathbb{R}^{n+1}, ~~~ \theta^T = \left[\theta_0, \theta_1, \theta_2...\theta_n\right]
 $$
 
 and using the transpose of $\theta$ and the rules of martix multipication,
@@ -342,7 +342,7 @@ $$\mathbf{X} = \left[\begin{array}
 1 & x_1^3 &   .  & x_n^3 \\
 . & .     &   .  &  .    \\
 1 & x_1^m &   .  & x_n^m   
-\end{array}\right] \in \mathbf{R}^{m * n+1}
+\end{array}\right] \in \mathbb{R}^{m * n+1}
 $$
 
 #### Details of multivariate regression 
@@ -487,8 +487,589 @@ $$
 Using the analytic approach is a good alternative with small (n < 1000) number of features, but the inverse portion of the algorithm is slow and gradient descent is faster. Also, as we will see, the analytic approach is not possible for things like logistic regression.
 
 
+## 3. Logistic regression
+
+Logistic regression is a classification procedure where the values of y are,
+
+$$
+y \in \{0,1\}
+$$
+
+So we want,
+
+$$
+0 \leq h_\theta(x) \leq 1
+$$
+
+#### hypothesis for logistic regression
+
+The hypothesis for logistic regression is a function of the hypothesis for linear regression:
+
+$$
+g(\theta^Tx)
+$$
+
+Sigmoid function/logistic function
+
+$$
+g(z) = \frac{1}{1+e^{-z}}
+$$
+
+```{r, fig.align='center'}
+z <- -10:10
+g <- 1/(1 + exp(-z))
+
+plot(z,g)
+abline(v = 0,lty = 3)
+lines(z,g)
+```
+
+replace z with $\theta^Tx$,
+
+$$
+h_\theta(x) = \frac{1}{1+e^{-\theta^Tx}}
+$$
+
+The hypothesis can be interpreted as the estimated probability that y = 1, given x, parameterized by theta,
+
+$$
+h_\theta(x) = p(y=1 | x;\theta)
+$$
 
 
+#### Decision boundary
+
+Predict $y = 1$ if $h_\theta(x) \geq 0.5$, and predict $y = 0$ if $h_\theta(x) < 0.5$. By looking at the plot above (mentally replace $z$ with $\theta^T(x)$, and $g$ with $h_\theta(x)$), it is clear that $h_\theta(x) \geq 0.5$ when $\theta^T(x) \geq 0$, and $h_\theta(x) < 0.5$ when $\theta^T(x) < 0$. The hypothesis is just a function of $\theta^T(x)$. For example, if
+
+$$
+\theta^T(x) = g(\theta_0 + \theta_1x_1 + \theta_2x2)
+$$ 
+
+and
+
+$$
+\theta = \left[\begin{array}
+{c}
+-3 \\
+1  \\
+1  
+\end{array}\right] 
+$$
+
+Then we can substitute, solve for $y = 1$ by setting $\theta^Tx \geq 0$,
+
+<br>
+
+<center><img src="graphics\\week2-1.png" height="200px"/></center>
+
+<br>
 
 
+Nonlinear decision boundaries can be estimated using higher order polynomials,
+
+<br>
+
+<center><img src="graphics\\week2-2.png" height="200px"/></center>
+
+<br>
+
+It is important to keep in mind that the decision boundary is a function of the parameters, not of the data. In order to create a decision boundary, we must first estimate the parameters.
+
+### Cost function
+
+We have $m$ examples, and $n$ features:
+
+$$
+x \in \left[\begin{array}
+{c}
+x_0 \\
+x_1  \\
+...  \\
+x_n  
+\end{array}\right] ~~~ x_0 = 1, y \in \{0,1\} 
+$$
+
+We do not want to use the cost function for linear regression, because the sigmoid function would create a non-convexity. This would mean that a global optimum would be hard to find. The cost function for logistic regression is,
+
+$$
+Cost(h_\theta(x),y) = \left\{\begin{array}
+{c}
+-log(h_\theta(x)) ~~~ if ~~ y = 1 \\
+-log(1 - h_\theta(x)) ~~~ if ~~ y = 0 \\
+\end{array}\right\}
+$$
+
+$Cost(h_\theta(x),y) = J(\theta)$ for only one training example. For $y = 1$, the cost = 0 if $h_\theta(x) = 1$, but as $h_\theta(x)$ approaches 0, the cost approaches $\infty$. This basically means that very bad missclassifications are highly penalized. A simpler way to write the cost function,
+
+$$
+J(\theta) = -\frac{1}{m} \left[ \sum_{i=1}^m y^{(i)}log (h_\theta(x^{(i)})) + (1-y^{(i)})log(1-h_\theta(x^{(i)})) \right]
+$$
+
+This has similar properties to the bernouli distribution where if $y = 1$, then the second term goes to zero, and if $y = 0$, the first term goes to zero. This cost function comes from maximum liklihood estimation. To fit parameters $\theta$, $argmin ~~ J(\theta)$. To make a prediction given new x,
+
+$$
+h_\theta(x) = \frac{1}{1 + e^{-\theta^Tx}}
+$$
+
+### Gradient decent
+
+Just like in linear regression, we have to take the partial derivative, 
+
+$$
+\theta_j = \theta_j - \alpha \frac{\partial}{\partial \theta_j}J(\theta)  \\
+$$
+        
+$$
+\theta_j = \theta_j - \alpha\frac{1}{m} \sum^m_{i=1}(h_{\theta_j}x^{(i)} - y^{(i)})*x^{(i)} \\  
+$$
+
+The vectorized implementation is:
+
+$$
+\theta = \theta - \frac{\alpha}{m} \mathbf{X}^T(g(\mathbf{X} \theta)- \overrightarrow{y})
+$$
+
+#### advanced optimization
++ Gradient descent
++ Conjugate gradient
++ BFGS
++ L-BFGS
+
+For the last three, you do not need to pick $\alpha$, and it's often faster than gradient decent. These algorithms would be useful when running very large ML problems.
+
+### Multiclass classification
+
+More than two classes:
+
+$$
+y \in \{0,1,2...n\}
+$$
+
+
+<br>
+
+<center><img src="graphics\\week2-3.png" height="200px"/></center>
+
+<br>
+
+#### One-vs-all (one-vs-rest)
+
+Fit seperate classifiers for each class vs every other class. Formally,
+
+$$
+h_\theta^{(i)}(x) = P(y = i|x;\theta) ~~~ (i = 1,2,3)
+$$
+
+<br>
+
+<center><img src="graphics\\week2-4.png" height="200px"/></center>
+
+<br>
+
+Training a logistic regression classifier $h_\theta^{(i)}(x)$ for each class $i$ to predict the probability that $y = i$. To make a predictions using the new input of $x$, pick the class that $i$ maximizes:
+
+$$
+argmax ~~~ h_\theta^{(i)}(x)
+$$
+
+That simply means that "we select" whatever value of $y$ that gives us the highest probability.
+
+
+## Regularized regression
+
+Regularized regression helps to amerliorate overfitting the data.
+
++ Bias: when training data is underfit by model
++ Variance: when training data is overfit by the model. This normally occurs when there are too many features, and the model does not generalize well to new data.
+
+#### address overfitting
+
+1. Reduce number of features:
++ Manually select which features to keep ("feature selection")
++ model selection algorithm
+
+2. Regularization
++ keep all of the features but reduce magnitudes of parameters $\theta_j$
++ Makes sense if all the features contribute to predicting $y$
+
+When there is a large number of features, we do not know what parameters we need to "shrink". We can do this automatically by adding another term to our cost function. The cost function for linear regression is:
+
+$$
+J(\theta) = \frac{1}{2m} \sum^m_{i=1}(h_\theta (x^{(i)}) - y^{(i)})^2
+$$
+
+and for regularized linear regression:
+
+$$
+J(\theta) = \frac{1}{2m} \left[\sum^m_{i=1}(h_\theta (x^{(i)}) - y^{(i)})^2 + \lambda \sum^n_{i=1} \theta_j^2 \right]
+$$
+
+Where $\lambda$ is the regularization parameter. There are two goals: (1) fit the training data--the original cost function, and (2) keep the parameters small--the regularization term. The regularization parameter controls the tradeoff between these two goals. By convention, we do not penalize $\theta_0$, and treat it seperately than the $\theta_1...\theta_n$. Note: if $\lambda$ is too large, the algorithm underfits the training data.
+
+
+### Linear gradient descent
+
+$$
+\theta_0 = \theta_0 - \alpha \frac{1}{m}\sum_{i=1}^m(h_\theta(x^{(i)}) - y^{(i)})x_0^{(i)}
+$$
+
+$$
+\theta_j = \theta_j - \alpha \left[\frac{1}{m}\sum_{i=1}^m(h_\theta(x^{(i)}) - y^{(i)})x_j^{(i)} + \frac{\lambda}{m} \theta_j \right]
+$$
+
+and by using algebra,
+
+$$
+\theta_j = \theta_j(1 - \alpha\frac{\lambda}{m}) - \alpha \frac{1}{m}\sum_{i=1}^m(h_\theta(x^{(i)}) - y^{(i)})x_j^{(i)} 
+$$
+
+This is why regularizaion works. The term $1- \alpha \frac{\lambda}{m}$ is a number slightly smaller than one. For now, let's assume it is 0.95. The $\theta_j$ term is replaced with $\theta_j(1 - \alpha\frac{\lambda}{m})$ which is effectively saying $\theta_j * 0.95$. This is shrinking the "squared norm" ($\theta_j^2$) of $\theta_j$.
+
+### Regularized Linear regression normal equations
+
+The normal equation for regularized regression is similar to linear regression but with a few extra terms. If $\lambda > 0$ it can be shown that the following equation is invertible (non-singular),
+
+$$
+\theta = (\mathbf{X}^T\mathbf{X} + \lambda \left[\begin{array}
+{cccc}
+0 &  &  &  \\
+  & 1 &  &   \\
+  &  & ... &   \\
+  &  &  & 1  \\
+\end{array}\right] )^{-1} X^T y
+$$
+
+### Regularized logistic regression
+
+The cost function is:
+
+$$
+J(\theta) = -\frac{1}{m} \left[ \sum_{i=1}^m y^{(i)}log (h_\theta(x^{(i)})) + (1-y^{(i)})log(1-h_\theta(x^{(i)})) \right] + \frac{\lambda}{2m} \sum_{j=1}^n \theta_j^2
+$$
+
+Gradient descent looks the same as for linear regression, but has a different hypothesis, therefore, it is a different algorithm.
+
+<br>
+
+<center><img src="graphics\\week2-5.png" height="200px"/></center>
+
+<br>
+
+## 4. Neural Networks
+
+### non-linear hypothesis
+Neural networks are useful for very non-linear functions (non-linear hypotheses). Although in some cases a logsitic regression model would work, there is often too many features to use logistic regression in practice. For example, is n = 100, and you wanted all the third order polynomial features $(x_i,x_j,x_k)$, then we would end up with $(100^3)/6 = 170,000$ features.
+
+<br>
+
+<center><img src="graphics\\week3-1.png" height="200px"/></center>
+
+<br>
+
+### Biological motivation
+
++ Originated as an attempt to mimic the brain. They were widely used in the 80s and 90s, but are computationally expensive. They have seen a resurgence with the adavance of computing technology.
+
++ There is a hypothesis that the brain only uses one "learning algortihm" to conduct all of its complex functions (if you "rewire" the eyes to the auditory cortex or the somatosensory cortex, they learn to see)
+
++ The idea is that we can plug in any data into the brain and it can learn from the data and begin to use it... it would be nice to implement something like this into an algorithm
+
+### Model representation
+
+A neuron receives information from the dendrites, does computations in the cell body, and outputs them to through the axons. Neurons communicate with each other through little pulses of electricity. The output of one becomes the input of another.
+
+<br>
+
+<center><img src="graphics\\week3-2.png" height="200px"/></center>
+
+<br>
+
+
+The neurons in an artificial neural network is just a logistic unit. The data ($x_0,x_1,...,x_n$) are the inputs and the outputs are the hypothesis from a logistic (sigmoid) "activation function". A single neuron can be represented as below:
+
+<br>
+
+<center><img src="graphics\\week3-3.png" height="200px"/></center>
+
+<br>
+
+and multiple neurons (a neural network) can be represented as:
+
+<br>
+
+<center><img src="graphics\\week3-4.png" height="200px"/></center>
+
+<br>
+
+
+For ANNs, parameters are referred to as "weights". Anything that isn't an input or output layer is a hidden layer. The computation steps for the diagram above:
+
+
++ $a^{(j)}_i$ = activation of unit $i$ in layer $j$
++ $\Theta^{(j)}$ = matrix of weights controlling function mapping from layer $j$ to layer $j+1$
+
+$$
+a^{(2)}_1 = g(\Theta^{(1)}_{10}x_0 + \Theta^{(1)}_{11}x_1 + \Theta^{(1)}_{12}x_2 + \Theta^{(1)}_{13}x_3) 
+$$
+
+$$
+a^{(2)}_2 = g(\Theta^{(1)}_{20}x_0 + \Theta^{(1)}_{21}x_1 + \Theta^{(1)}_{22}x_2 + \Theta^{(1)}_{23}x_3)
+$$
+
+$$
+a^{(2)}_3 = g(\Theta^{(1)}_{30}x_0 + \Theta^{(1)}_{31}x_1 + \Theta^{(1)}_{32}x_2 + \Theta^{(1)}_{33}x_3)
+$$
+
+$$
+h_\Theta(x) = a^{(3)}_1 = g(\Theta^{(2)}_{10}a^{(2)}_0 + \Theta^{(2)}_{11}a^{(2)}_1 + \Theta^{(2)}_{12}a^{(2)}_2 + \Theta^{(2)}_{13}a^{(3)}_2)
+$$
+
+If a network has $s_j$ units in layer $j$, $s_{j+1}$ units in layer $j+1$, then $\Theta^{(j)}$ will be dimensions of $(s_{j+1}) \times (s_j + 1)$.
+
+#### Forward propagation: vectorization
+
+Replace what is inside the parentheses with simplified notation,
+
+$$
+z^{(2)}_1 = \Theta^{(1)}_{10}x_0 + \Theta^{(1)}_{11}x_1 + \Theta^{(1)}_{12}x_2 + \Theta^{(1)}_{13}x_3 
+$$
+
+$$
+z^{(2)}_2 = \Theta^{(1)}_{20}x_0 + \Theta^{(1)}_{21}x_1 + \Theta^{(1)}_{22}x_2 + \Theta^{(1)}_{23}x_3
+$$
+
+$$
+z^{(2)}_3 = \Theta^{(1)}_{30}x_0 + \Theta^{(1)}_{31}x_1 + \Theta^{(1)}_{32}x_2 + \Theta^{(1)}_{33}x_3
+$$
+
+$$
+z^{(3)}_1 = \Theta^{(2)}_{10}a^{(2)}_0 + \Theta^{(2)}_{11}a^{(2)}_1 + \Theta^{(2)}_{12}a^{(2)}_2 + \Theta^{(2)}_{13}a^{(3)}_2
+$$
+
+We can rewrite the input layer as:
+
+$$
+x = \left[\begin{array}
+{c}
+x_0 \\
+x_1  \\
+x_2  \\
+x_3  
+\end{array}\right] = a^{(1)} 
+$$
+
+and the linear combination of weights and features as:
+
+$$
+z^{(2)} = \left[\begin{array}
+{c}
+z^{(2)}_1 \\
+z^{(2)}_2  \\
+z^{(2)}_3 
+\end{array}\right] = a^{(1)} 
+$$
+
+The vectorized form:
+
+$$
+z^{(2)} = \Theta^{(1)} a^{(1)}
+$$
+
+$$
+a^{(2)} = g(z^{(2)})
+$$
+
+add a "bias" unit to $a^{(2)}$, so $a^{(2)}_0 = 1$, so now $a^{(2)} \in R^4$ and,
+
+$$
+z^{(3)} = \Theta^{(2)} a^{(2)}
+$$
+
+$$
+h_\Theta(x) = a^{(3)} = g(z^{(3)})
+$$
+
+A forward propogating ANN basically just feeds the outputs of logistic regression into the input of another layer. 
+
+#### Logical functions
+Neural networks can be used to approximate logical functions. It may be helpful to replot the sigmoid function:
+
+```{r, echo=F, fig.align='center'}
+z <- -10:10
+g <- 1/(1 + exp(-z))
+
+plot(z,g)
+abline(v = 0,lty = 3)
+lines(z,g)
+```
+
+Note that when z is 5, g is very close to 1, and when z is -5, g is very close to 0. A single layer ANN is presented allow. This ANN approximates the AND function. The easiest way to understand it is just by looking at the figure for a second, it is pretty straightforward.
+
+<br>
+
+<center><img src="graphics\\week3-5.png" height="200px"/></center>
+
+<br>
+
+To negate a feature, just use a large negative parameter. To make sense of this just look at the figure below and mentally step through what happens when features have large negative parameters. For another example, we can calculate the [XNOR function](http://mathworld.wolfram.com/XNOR.html). X1 XNOR X2 is equivalent to $(X1 \land X2) \lor (!X1 \land !X2)$. We are trying to create a function to that is "true" when both X1 and X2 are true, or when both neither X1 and X3 are true. The truth table should look like:
+
+$$
+\left[\begin{array}
+{ccc}
+\mathbf{X1} & \mathbf{X2} & \mathbf{X1 ~ XNOR ~ X2} \\
+1 & 1 & 1 \\
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+0 & 0 & 1 
+\end{array}\right] 
+$$
+
+
+<br>
+
+<center><img src="graphics\\week3-6.png" height="200px"/></center>
+
+<br>
+
+#### Multiclass ANN
+
+Similar to logistic regression, multiclass output just uses one-vs-all. This is done by using 4 output layers.
+
+<br>
+
+<center><img src="graphics\\week3-7.png" height="200px"/></center>
+
+<br>
+
+### Learning algortihm
+The cost function for ANNs is similar to the regularized cost function for logistic regression (which is shown immediately below). 
+
+$$
+J(\theta) = -\frac{1}{m} \left[ \sum_{i=1}^m y^{(i)}log (h_\theta(x^{(i)})) + (1-y^{(i)})log(1-h_\theta(x^{(i)})) \right] + \frac{\lambda}{2m} \sum_{j=1}^n \theta_j^2
+$$
+
+The cost function for the ANN is:
+
+$$
+J(\theta) = -\frac{1}{m} \left[ \sum_{i=1}^m \sum_{k=1}^K y_k^{(i)}log (h_\theta(x^{(i)}))_k + (1-y_k^{(i)})log(1-h_\theta(x^{(i)}))_k \right] + \frac{\lambda}{2m} \sum_{l=1}^{L-1} \sum_{i=1}^{s_l} \sum_{j=1}^{s_l+1} (\theta_{ji}^{(l)})^2
+$$
+
+where $L$ = total number of layers in the network, $s_l$ = number of units (not counting the bias unit) in layer $l$, $K$ = the number of units in the output layer, $i$ is the $i$'th output.
+
+### Back propogation
+
+We need to minimize $J(\Theta)$, so we need to compute:
+
+$$
+J(\Theta)
+$$
+
+$$
+\frac{\partial}{\partial\Theta^{(l)}_{ij}}
+$$
+
+Reminder of the forward propogation steps:
+
+<br>
+
+<center><img src="graphics\\week4-1.png" height="200px"/></center>
+
+<br>
+
+For back propogation, we calculate the activation errors from the output layer and propogate these errors "backwards" through the network. We will use $\delta_j^{(l)}$ to represent the "error" of node $j$ in layer $l$. Begin with each output unit in layer $L$
+
+$$
+\delta^{(4)}_j = a^{(4)}_j - y_j
+$$
+
+Where $a^{(4)}_j = (h_\theta(x))_j$. The above equation can be vectorized and written as the following: $\delta^{(4)} = a^{(4)} - y$. The errors for the other layers are:
+
+$$
+\delta^{(3)} = (\Theta^{(3)})^T \delta^{(4)} .* g'(z^{(3)})
+$$
+
+$$
+\delta^{(2)} = (\Theta^{(2)})^T \delta^{(3)} .* g'(z^{(2)})
+$$
+
+Where the first derivatives are equal to,
+
+$$
+g'(z^{(3)}) = a^{(3)} .* (1-a^{(3)})
+$$
+
+$$
+g'(z^{(2)}) = a^{(2)} .* (1-a^{(2)})
+$$
+
+There is not an error for the first layer ($\delta^{(1)}$) because it is the input layer. Apparantly the partial derivatives with respect to the parameters is a bit complicated, but the result is:
+
+$$
+\frac{\partial}{\partial\Theta_{ij}^{l}}J(\Theta) = a_j^{(l)}\delta_i^{(l+1)}
+$$
+
+#### Back propogation algorithm
+Training set ($x^{(1)},y^{(1)}),...,(x^{(m)},y^{(m)}$),
+
+<br>
+
+<center><img src="graphics\\week4-2.png" height="200px"/></center>
+
+<br>
+
+
+The lecture includes some stuff about backpropagation in practice. It get's into the details of how to reshape parameter matrices in MATLAB, and how to program the fancier functions. I do not cover that here as it is not general enough to be very helpful. 
+
+#### Gradient checking
+Gradient checking is a check to make sure that backpropogation is calculating the correct gradient. It is done by simply taking the numberical approximation to the gradient and checking it against back propogation. Below is for when $\theta$ is a real number
+
+
+$$
+\frac{d}{d \theta} J(\theta) \approx \frac{J(\theta + \epsilon) - J(\theta-\epsilon)}{2 \epsilon}
+$$
+
+Ng tends to use $\epsilon = 10^{-4}$. For a parameter vector $\theta$ (for example, $\theta$ is the "unrolled" version of $\Theta^{(1)}$, $\Theta^{(2)}$, $\Theta^{(3)}$), 
+
+
+$$
+\theta \in \mathbb{R}^n 
+$$
+
+$$
+\theta = [\theta_1, \theta_2,...,\theta_n] 
+$$
+
+$$
+\frac{\partial}{\partial \theta_1} J(\theta) \approx \frac{J(\theta_1 + \epsilon, \theta_2,...,\theta_n) - J(\theta_1 - \epsilon, \theta_2,...,\theta_n)}{2 \epsilon}
+$$
+
+$$
+\frac{\partial}{\partial \theta_2} J(\theta) \approx \frac{J(\theta_1, \theta_2 + \epsilon,...,\theta_n) - J(\theta_1, \theta_2  - \epsilon,...,\theta_n)}{2 \epsilon}
+$$
+
+$$
+\frac{\partial}{\partial \theta_n} J(\theta) \approx \frac{J(\theta_1, \theta_2,...,\theta_n + \epsilon) - J(\theta_1, \theta_2,...,\theta_n  - \epsilon)}{2 \epsilon}
+$$
+
+This would actually be implemented in MATLAB like:
+
+<br>
+
+<center><img src="graphics\\week4-3.png" height="200px"/></center>
+
+<br>
+
+Compare gradApprox to DVec and see if they are close. This will help to assure that backprogagation is working ok. The idea is to implement backpropagation to compute DVec, check with gradApprox, then turn off gradient checking to actually train the network. Gradient checking is very slow.
+
+#### Initialization
+
+You cannot initalize $\theta$ with zeros because after each update the weights corresponding to inputs going into the hidden units will be identical. We get around this with random initialization to break the symmetry of the weights. Initialize each $\Theta_{ij}^(l)$ to a random value.
+
+#### Training a neural network
+
+<br>
+
+<center><img src="graphics\\week4-4.png" height="200px"/></center>
+
+<br>
 
